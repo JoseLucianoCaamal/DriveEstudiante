@@ -5,46 +5,41 @@ async function cargarArchivos(ruta = '/') {
     currentPath = ruta;
     const lista = document.getElementById('fileList');
     lista.innerHTML = '<li>Cargando...</li>';
+    
     try {
+        // Se añade &t=${Date.now()} para forzar al móvil a refrescar los datos
         const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`, { cache: 'no-store' });
         const archivos = await res.json();
         lista.innerHTML = '';
+        
         if (ruta !== '/') {
             lista.innerHTML += `<li onclick="cargarArchivos('/')" style="cursor:pointer; color:red;">⬅️ Volver a la raíz</li>`;
         }
+
         archivos.forEach(a => {
             const li = document.createElement('li');
             if (a.esCarpeta) {
+                // Botón de descarga ZIP para carpetas
                 const urlZip = `${URL_API.replace('/api', '')}/download-folder/${encodeURIComponent(a.nombre)}`;
                 li.innerHTML = `📁 <span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; color:blue;">${a.nombre}</span>
                                 <a href="${urlZip}"><button style="padding:2px; margin-left:10px; cursor:pointer;">⬇️ Zip</button></a>`;
             } else {
+                // Botón de descarga de archivo individual
                 const urlDescarga = URL_API.replace('/api', '') + '/uploads/' + encodeURIComponent(a.nombre);
-                li.innerHTML = `📄 ${a.nombre} <a href="${urlDescarga}" download style="margin-left:10px;"><button style="padding:5px; background:#dbeafe; cursor:pointer;">⬇️ Descargar</button></a>`;
+                li.innerHTML = `📄 ${a.nombre} 
+                    <a href="${urlDescarga}" download style="margin-left:10px;">
+                        <button style="padding:5px; background:#dbeafe; cursor:pointer;">⬇️ Descargar</button>
+                    </a>`;
             }
-            li.innerHTML += `<div style="margin-left: auto;">
-                                <button onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')" style="padding:5px; margin-right:5px;">✏️</button>
-                                <button onclick="borrar(${a.id})" style="padding:5px; background:#fee2e2;">🗑️</button>
-                            </div>`;
+            
+            li.innerHTML += `
+                <div style="margin-left: auto;">
+                    <button onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')" style="padding:5px; margin-right:5px;">✏️</button>
+                    <button onclick="borrar(${a.id})" style="padding:5px; background:#fee2e2; cursor:pointer;">🗑️</button>
+                </div>`;
             lista.appendChild(li);
         });
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
-}
-
-async function subirArchivo() {
-    const fileInput = document.getElementById('fileInput');
-    const statusDiv = document.getElementById('status');
-    if (fileInput.files.length === 0) return alert('Selecciona archivos.');
-    statusDiv.innerText = 'Subiendo...';
-    for (let i = 0; i < fileInput.files.length; i++) {
-        const formData = new FormData();
-        formData.append('archivoEstudiante', fileInput.files[i]);
-        formData.append('rutaPadre', currentPath);
-        await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
-    }
-    fileInput.value = ''; 
-    statusDiv.innerText = ''; 
-    cargarArchivos(currentPath);
 }
 
 async function subirArchivo() {
@@ -54,19 +49,24 @@ async function subirArchivo() {
     
     statusDiv.innerText = 'Subiendo...';
     
+    // Subida múltiple
     for (let i = 0; i < fileInput.files.length; i++) {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
+        
         await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
     }
     
+    // Limpieza
     fileInput.value = ''; 
+    fileInput.type = 'text'; 
+    fileInput.type = 'file'; 
     statusDiv.innerText = ''; 
+    
     cargarArchivos(currentPath);
 }
 
-// ... (crearCarpeta, borrar, renombrar se mantienen iguales)
 async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
@@ -79,7 +79,7 @@ async function crearCarpeta() {
 }
 
 async function borrar(id) {
-    if(confirm('¿Borrar?')) {
+    if(confirm('¿Borrar este elemento?')) {
         await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
         cargarArchivos(currentPath);
     }

@@ -48,3 +48,18 @@ li {
     margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; 
 }
 li a { text-decoration: none; color: var(--primary); font-weight: 600; margin-left: 12px; }
+
+/* Asegurar que los botones de descarga se vean bien en móvil */
+li {
+    flex-wrap: wrap; /* Permite que los elementos pasen a la siguiente línea si no caben */
+    gap: 10px;
+}
+
+li a button {
+    width: auto; /* El botón de descarga no ocupará todo el ancho */
+    padding: 8px 12px;
+}
+
+.upload-box input {
+    max-width: 90%; /* Evita que el nombre del archivo rompa el diseño */
+}
