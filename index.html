@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive Estudiantil</title>
+    <!-- Fuente profesional -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#4f46e5">
     <link rel="apple-touch-icon" href="./Img/akko.jpeg">
 </head>
 <body>
@@ -15,14 +17,11 @@
         <p class="subtitle">Almacenamiento seguro para tus reportes, datasheets y proyectos</p>
         
         <div class="upload-box">
-            <!-- El atributo 'multiple' ya está aquí, perfecto -->
             <input type="file" id="fileInput" multiple>
             <br>
             <button onclick="subirArchivo()">Subir Archivo</button>
-            <button onclick="crearCarpeta()" style="background: #10b981; margin-top: 10px;">Crear Carpeta</button>
-            
-            <!-- Este div es necesario para que tu app.js pueda mostrar "Subiendo..." -->
-            <div id="status" style="margin-top: 10px; font-weight: bold; color: #2563eb;"></div>
+            <button onclick="crearCarpeta()" style="background: var(--accent); margin-top: 10px;">Crear Carpeta</button>
+            <div id="status"></div>
         </div>
 
         <div class="file-list-section">
@@ -32,13 +31,10 @@
     </div>
 
     <script src="app.js"></script>
-
-    <!-- Registro del Service Worker para convertirla en PWA -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('Service Worker registrado correctamente'))
-                .catch(err => console.log('Error al registrar SW:', err));
+                .catch(err => console.log('SW Error:', err));
         }
     </script>
 </body>
