@@ -7,7 +7,6 @@ async function cargarArchivos(ruta = '/') {
     lista.innerHTML = '<li>Cargando...</li>';
     
     try {
-        // cache: 'no-store' asegura que siempre traiga datos frescos
         const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}`, { cache: 'no-store' });
         const archivos = await res.json();
         lista.innerHTML = '';
@@ -24,6 +23,12 @@ async function cargarArchivos(ruta = '/') {
                 const urlDescarga = URL_API.replace('/api', '') + '/uploads/' + encodeURIComponent(a.nombre);
                 li.innerHTML = `📄 <a href="${urlDescarga}" target="_blank">${a.nombre}</a>`;
             }
+            // Botones de acción (Borrar y Renombrar)
+            li.innerHTML += `
+                <div style="margin-left: auto;">
+                    <button onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')" style="padding:5px; margin-right:5px;">✏️</button>
+                    <button onclick="borrar(${a.id})" style="padding:5px; background:#fee2e2;">🗑️</button>
+                </div>`;
             lista.appendChild(li);
         });
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
@@ -50,6 +55,25 @@ async function crearCarpeta() {
         body: JSON.stringify({ nombre, rutaPadre: currentPath })
     });
     cargarArchivos(currentPath);
+}
+
+async function borrar(id) {
+    if(confirm('¿Borrar este elemento?')) {
+        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
+        cargarArchivos(currentPath);
+    }
+}
+
+async function renombrar(id, actual) {
+    const nuevo = prompt("Nuevo nombre:", actual);
+    if (nuevo) {
+        await fetch(`${URL_API}/rename/${id}`, { 
+            method: 'PATCH', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nuevoNombre: nuevo }) 
+        });
+        cargarArchivos(currentPath);
+    }
 }
 
 cargarArchivos('/');
