@@ -56,3 +56,24 @@ input[type="file"] {
     padding: 10px;
     border-radius: 8px;
 }
+
+/* Asegura que el contenedor del texto no crezca infinito */
+.file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px; /* Ajusta según el tamaño de tu pantalla */
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Reducir tamaño de iconos y botones para móvil */
+.btn-icon {
+    font-size: 14px !important;
+    padding: 6px !important;
+}
+
+li {
+    padding: 10px !important;
+    gap: 5px !important;
+}

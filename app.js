@@ -1,13 +1,21 @@
 const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
 let currentPath = '/';
 
-async function cargarArchivos(ruta = '/') {
+// Manejo del botón "Atrás" del navegador/móvil
+window.onpopstate = function(event) {
+    cargarArchivos(event.state ? event.state.path : '/', false);
+};
+
+async function cargarArchivos(ruta = '/', pushHistory = true) {
     currentPath = ruta;
+    if (pushHistory) {
+        history.pushState({ path: ruta }, '', '');
+    }
+    
     const lista = document.getElementById('fileList');
     lista.innerHTML = '<li>Cargando...</li>';
     
     try {
-        // Se añade &t=${Date.now()} para evitar caché en móviles
         const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`, { cache: 'no-store' });
         const archivos = await res.json();
         lista.innerHTML = '';
@@ -19,18 +27,20 @@ async function cargarArchivos(ruta = '/') {
         archivos.forEach(a => {
             const li = document.createElement('li');
             const icon = a.esCarpeta ? '📁' : '📄';
+            const urlDescarga = URL_API.replace('/api', '') + '/uploads/' + encodeURIComponent(a.nombre);
             
-            // Estructura moderna con clases CSS btn-icon y btn-zip
+            // Si es carpeta, vista de carpeta. Si es archivo, enlace a vista previa (target="_blank")
+            const nombreElement = a.esCarpeta 
+                ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600;">${a.nombre}</span>`
+                : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none;"><div class="file-name">${a.nombre}</div></a>`;
+
             li.innerHTML = `
                 <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
-                <div style="flex-grow: 1;">
-                    <span onclick="${a.esCarpeta ? `cargarArchivos('${a.nombre}')` : ''}" 
-                          style="cursor:pointer; font-weight: 600;">${a.nombre}</span>
-                </div>
+                <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
                 <div style="display: flex; gap: 8px;">
                     ${a.esCarpeta ? 
                         `<a href="${URL_API.replace('/api', '')}/download-folder/${encodeURIComponent(a.nombre)}"><button class="btn-zip">⬇️ ZIP</button></a>` : 
-                        `<a href="${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}" download><button class="btn-icon">⬇️</button></a>`
+                        `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`
                     }
                     <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
                     <button class="btn-icon" onclick="borrar(${a.id})">🗑️</button>
@@ -74,7 +84,7 @@ async function crearCarpeta() {
 }
 
 async function borrar(id) {
-    if(confirm('¿Borrar este elemento?')) {
+    if(confirm('¿Borrar?')) {
         await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
         cargarArchivos(currentPath);
     }
