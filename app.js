@@ -1,27 +1,30 @@
-const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
+// ¡IMPORTANTE!: Pega aquí la URL exacta de tu terminal actual
+const URL_API = 'https://lead-now-analysts-director.trycloudflare.com/api';
 
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
+    const statusDiv = document.getElementById('status');
     if (fileInput.files.length === 0) return alert('Selecciona un archivo.');
+    
     const formData = new FormData();
     formData.append('archivoEstudiante', fileInput.files[0]);
-    
+
+    statusDiv.innerText = 'Subiendo...';
     try {
         const res = await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
         if (res.ok) { 
-            alert('¡Subido!'); 
+            statusDiv.innerText = '¡Éxito! Archivo guardado.';
             fileInput.value = ''; 
             cargarArchivos(); 
         } else {
-            // Capturamos el error detallado del servidor
-            const errorMsg = await res.text();
-            alert('Error al subir: ' + errorMsg);
+            const err = await res.text();
+            statusDiv.innerText = 'Error: ' + err;
         }
-    } catch (e) { alert('Error de red al subir: ' + e.message); }
+    } catch (e) { statusDiv.innerText = 'Error de red: ' + e.message; }
 }
 
 async function crearCarpeta() {
-    const nombre = prompt("Nombre de la carpeta:");
+    const nombre = prompt("Nombre de la nueva carpeta:");
     if (!nombre) return;
     try {
         const res = await fetch(`${URL_API}/create-folder`, {
@@ -29,19 +32,17 @@ async function crearCarpeta() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ nombre })
         });
-        if (!res.ok) {
-            const errorMsg = await res.text();
-            alert('Errores al crear carpeta: ' + errorMsg);
-        }
+        if (!res.ok) alert('Error al crear: ' + await res.text());
         cargarArchivos();
-    } catch (e) { alert('Error de red al crear carpeta: ' + e.message); }
+    } catch (e) { alert('Error de red: ' + e.message); }
 }
 
 async function cargarArchivos() {
     const lista = document.getElementById('fileList');
+    lista.innerHTML = '<li>Cargando...</li>';
     try {
         const res = await fetch(`${URL_API}/files`);
-        if (!res.ok) throw new Error('Error al obtener lista: ' + res.status);
+        if (!res.ok) throw new Error('No se pudo conectar');
         
         const archivos = await res.json();
         lista.innerHTML = archivos.length === 0 ? '<li>La nube está vacía.</li>' : '';
@@ -50,8 +51,8 @@ async function cargarArchivos() {
             const icono = a.esCarpeta ? '📁' : '📄';
             li.innerHTML = `${icono} ${a.nombre} 
                 <div style="margin-left: auto;">
-                    <button onclick="renombrar(${a.id}, '${a.nombre}')">✏️</button>
-                    <button onclick="borrar(${a.id})">🗑️</button>
+                    <button onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
+                    <button onclick="borrar(${a.id})" style="background: #fee2e2;">🗑️</button>
                 </div>`;
             lista.appendChild(li);
         });
@@ -63,10 +64,9 @@ async function cargarArchivos() {
 async function borrar(id) {
     if(confirm('¿Borrar?')) {
         try {
-            const res = await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
-            if (!res.ok) alert('Error al borrar');
+            await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
             cargarArchivos();
-        } catch (e) { alert('Error de red: ' + e.message); }
+        } catch (e) { alert('Error: ' + e.message); }
     }
 }
 
@@ -74,14 +74,13 @@ async function renombrar(id, actual) {
     const nuevo = prompt("Nuevo nombre:", actual);
     if (nuevo) {
         try {
-            const res = await fetch(`${URL_API}/rename/${id}`, { 
+            await fetch(`${URL_API}/rename/${id}`, { 
                 method: 'PATCH', 
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ nuevoNombre: nuevo }) 
             });
-            if (!res.ok) alert('Error al renombrar');
             cargarArchivos();
-        } catch (e) { alert('Error de red: ' + e.message); }
+        } catch (e) { alert('Error: ' + e.message); }
     }
 }
 
