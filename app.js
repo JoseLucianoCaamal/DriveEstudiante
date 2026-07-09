@@ -31,7 +31,7 @@ async function crearCarpeta() {
         });
         if (!res.ok) {
             const errorMsg = await res.text();
-            alert('Error al crear carpeta: ' + errorMsg);
+            alert('Errores al crear carpeta: ' + errorMsg);
         }
         cargarArchivos();
     } catch (e) { alert('Error de red al crear carpeta: ' + e.message); }
