@@ -1,4 +1,3 @@
-// ¡IMPORTANTE!: Actualiza este enlace con el que te da tu terminal de Linux AHORA MISMO
 const URL_API = 'https://lead-now-analysts-director.trycloudflare.com/api';
 let currentPath = '/';
 
@@ -8,7 +7,8 @@ async function cargarArchivos(ruta = '/') {
     lista.innerHTML = '<li>Cargando...</li>';
     
     try {
-        const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}`);
+        // cache: 'no-store' asegura que siempre traiga datos frescos
+        const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}`, { cache: 'no-store' });
         const archivos = await res.json();
         lista.innerHTML = '';
         
@@ -26,7 +26,7 @@ async function cargarArchivos(ruta = '/') {
             }
             lista.appendChild(li);
         });
-    } catch (e) { lista.innerHTML = '<li style="color: red;">Error de red</li>'; }
+    } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
 async function subirArchivo() {
@@ -37,23 +37,19 @@ async function subirArchivo() {
     formData.append('archivoEstudiante', fileInput.files[0]);
     formData.append('rutaPadre', currentPath);
     
-    try {
-        await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
-        cargarArchivos(currentPath);
-    } catch (e) { alert('Error de red'); }
+    await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
+    cargarArchivos(currentPath);
 }
 
 async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
-    try {
-        await fetch(`${URL_API}/create-folder`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ nombre, rutaPadre: currentPath })
-        });
-        cargarArchivos(currentPath);
-    } catch (e) { alert('Error de red'); }
+    await fetch(`${URL_API}/create-folder`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ nombre, rutaPadre: currentPath })
+    });
+    cargarArchivos(currentPath);
 }
 
 cargarArchivos('/');
