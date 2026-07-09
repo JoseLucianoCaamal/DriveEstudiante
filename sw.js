@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drive-estudiantil-v2.1';
+const CACHE_NAME = 'drive-estudiantil-v2.2';
 
 // Aquí listamos los archivos visuales de la app (el "App Shell")
 const urlsToCache = [
