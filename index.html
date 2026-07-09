@@ -13,12 +13,17 @@
     <div class="container">
         <h2>☁️ Drive Estudiantil ☁️</h2>
         <p class="subtitle">Almacenamiento seguro para tus reportes, datasheets y proyectos</p>
+        
         <div class="upload-box">
             <input type="file" id="fileInput">
             <br>
             <button onclick="subirArchivo()">Subir Archivo</button>
+            
+            <button onclick="crearCarpeta()" style="background: #10b981; margin-top: 10px;">Crear Carpeta</button>
+            
             <div id="status"></div>
         </div>
+
         <div class="file-list-section">
             <h3>Mis Archivos Guardados</h3>
             <ul id="fileList"></ul>
