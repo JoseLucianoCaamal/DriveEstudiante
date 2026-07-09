@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Drive</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; color: #333; }
+        h2 { color: #2c3e50; }
+        .upload-box { border: 2px dashed #3498db; padding: 30px; text-align: center; border-radius: 8px; background: #f8f9fa; }
+        button { margin-top: 15px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #2980b9; }
+        #status { margin-top: 15px; font-weight: bold; }
+        .file-list-section { margin-top: 40px; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 12px; background: #fff; border: 1px solid #e0e0e0; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <h2>Nube de Almacenamiento Estudiantil</h2>
+    <p>Sube tus datasets, imágenes de circuitos o reportes en PDF aquí.</p>
+
+    <div class="upload-box">
+        <input type="file" id="fileInput">
+        <br>
+        <button onclick="subirArchivo()">Subir Archivo</button>
+        <div id="status"></div>
+    </div>
+
+    <div class="file-list-section">
+        <h3>Mis Archivos Guardados</h3>
+        <ul id="fileList">
+        </ul>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
