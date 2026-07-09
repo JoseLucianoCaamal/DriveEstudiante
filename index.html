@@ -4,161 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive Estudiantil</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="./Img/akko.jpeg">
-    
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-        }
-
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            max-width: 600px;
-            width: 100%;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        h2 { 
-            color: var(--primary); 
-            margin-top: 0;
-            text-align: center;
-            font-size: 24px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
-
-        .upload-box { 
-            border: 2px dashed #93c5fd; 
-            padding: 40px 20px; 
-            text-align: center; 
-            border-radius: 8px; 
-            background: #eff6ff; 
-            transition: all 0.3s ease;
-        }
-
-        .upload-box:hover {
-            border-color: var(--primary);
-            background: #dbeafe;
-        }
-
-        input[type="file"] {
-            margin-bottom: 15px;
-            font-size: 14px;
-            max-width: 100%;
-        }
-
-        button { 
-            padding: 12px 24px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 16px;
-            font-weight: 600;
-            transition: background 0.3s ease;
-            width: 100%;
-            max-width: 250px;
-        }
-
-        button:hover { 
-            background: var(--primary-hover); 
-        }
-
-        #status { 
-            margin-top: 15px; 
-            font-weight: 500; 
-            font-size: 14px;
-        }
-
-        .file-list-section { 
-            margin-top: 40px; 
-        }
-
-        .file-list-section h3 {
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
-            color: var(--text-main);
-        }
-
-        ul { 
-            list-style: none; 
-            padding: 0; 
-        }
-
-        li { 
-            padding: 15px; 
-            background: #f9fafb; 
-            border: 1px solid #e5e7eb; 
-            margin-bottom: 10px; 
-            border-radius: 8px; 
-            display: flex; 
-            align-items: center; 
-            transition: transform 0.2s;
-        }
-
-        li:hover {
-            transform: translateX(5px);
-            border-color: #93c5fd;
-        }
-
-        li a {
-            text-decoration: none; 
-            color: var(--primary); 
-            font-weight: 600; 
-            margin-left: 12px;
-            word-break: break-all;
-        }
-
-        li a:hover {
-            text-decoration: underline;
-        }
-    </style>
 </head>
 <body>
-
     <div class="container">
         <h2>☁️ Drive Estudiantil</h2>
         <p class="subtitle">Almacenamiento seguro para tus reportes, datasheets y proyectos</p>
-
         <div class="upload-box">
             <input type="file" id="fileInput">
             <br>
             <button onclick="subirArchivo()">Subir Archivo</button>
             <div id="status"></div>
         </div>
-
         <div class="file-list-section">
             <h3>Mis Archivos Guardados</h3>
-            <ul id="fileList">
-                </ul>
+            <ul id="fileList"></ul>
         </div>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
