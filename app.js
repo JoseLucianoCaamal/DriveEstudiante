@@ -1,4 +1,4 @@
-const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com';
+const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
 
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
