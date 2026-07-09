@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drive-estudiantil-v2.9';
+const CACHE_NAME = 'drive-estudiantil-v3.0';
 const urlsToCache = ['./', './index.html', './app.js', './manifest.json', './Img/akko.jpeg'];
 
 self.addEventListener('install', event => {
@@ -6,12 +6,12 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-    // REGLA: Si es API o archivos subidos, NO interceptar
-    if (event.request.url.includes('/api/') || event.request.url.includes('/uploads/')) {
-        return; 
+    // CORRECCIÓN CRÍTICA: Ignorar cualquier petición que sea a Cloudflare
+    if (event.request.url.includes('trycloudflare.com')) {
+        return; // El Service Worker NO toca estas peticiones, van directo a la red
     }
 
-    // Para la interfaz, priorizar caché pero actualizar en segundo plano
+    // Solo usar caché para archivos locales
     event.respondWith(
         caches.match(event.request).then(response => {
             return response || fetch(event.request);
