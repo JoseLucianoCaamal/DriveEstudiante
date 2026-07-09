@@ -15,13 +15,14 @@
         <p class="subtitle">Almacenamiento seguro para tus reportes, datasheets y proyectos</p>
         
         <div class="upload-box">
+            <!-- El atributo 'multiple' ya está aquí, perfecto -->
             <input type="file" id="fileInput" multiple>
             <br>
             <button onclick="subirArchivo()">Subir Archivo</button>
-            
             <button onclick="crearCarpeta()" style="background: #10b981; margin-top: 10px;">Crear Carpeta</button>
             
-            <div id="status"></div>
+            <!-- Este div es necesario para que tu app.js pueda mostrar "Subiendo..." -->
+            <div id="status" style="margin-top: 10px; font-weight: bold; color: #2563eb;"></div>
         </div>
 
         <div class="file-list-section">
@@ -29,6 +30,16 @@
             <ul id="fileList"></ul>
         </div>
     </div>
+
     <script src="app.js"></script>
+
+    <!-- Registro del Service Worker para convertirla en PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker registrado correctamente'))
+                .catch(err => console.log('Error al registrar SW:', err));
+        }
+    </script>
 </body>
 </html>
