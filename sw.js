@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drive-estudiantil-v1.1';
+const CACHE_NAME = 'drive-estudiantil-v1.2';
 
 // Aquí listamos los archivos visuales de la app (el "App Shell")
 const urlsToCache = [
@@ -6,7 +6,7 @@ const urlsToCache = [
     './index.html',
     './app.js',
     './manifest.json',
-    './icon.png'
+    './Img/akko.jpeg'
 ];
 
 // 1. Instalar y guardar la interfaz en caché
