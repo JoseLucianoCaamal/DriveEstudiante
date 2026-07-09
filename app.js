@@ -1,4 +1,4 @@
-const URL_API = 'https://lead-now-analysts-director.trycloudflare.com/api';
+const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
 let currentPath = '/';
 
 async function cargarArchivos(ruta = '/') {
