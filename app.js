@@ -1,3 +1,4 @@
+// Asegúrate de que esta sea la URL actual de tu túnel activo
 const URL_API = 'https://showed-qualifying-highest-definitely.trycloudflare.com/api';
 
 // 1. Función para subir un archivo al servidor
@@ -6,7 +7,7 @@ async function subirArchivo() {
     const statusDiv = document.getElementById('status');
     
     if (fileInput.files.length === 0) {
-        statusDiv.innerText = 'Selecciona un archivo antes de subir.';
+        statusDiv.innerText = 'Selecciona un archivo.';
         statusDiv.style.color = '#e74c3c';
         return;
     }
@@ -15,71 +16,74 @@ async function subirArchivo() {
     const formData = new FormData();
     formData.append('archivoEstudiante', archivo);
 
-    statusDiv.innerText = 'Subiendo archivo...';
-    statusDiv.style.color = '#3498db';
-
+    statusDiv.innerText = 'Subiendo...';
+    
     try {
         const respuesta = await fetch(`${URL_API}/upload`, {
             method: 'POST',
             body: formData
         });
 
-        const resultado = await respuesta.json();
-
         if (respuesta.ok) {
-            statusDiv.innerText = `¡Éxito! ${resultado.archivo.nombreOriginal} (${resultado.archivo.tamaño})`;
+            statusDiv.innerText = '¡Éxito! Archivo guardado.';
             statusDiv.style.color = '#27ae60';
-            fileInput.value = ''; // Limpiar el input
-            cargarArchivos(); // Recargar la lista automáticamente
+            fileInput.value = ''; 
+            cargarArchivos(); // Recargamos la lista desde la BD
         } else {
-            statusDiv.innerText = `Error: ${resultado.mensaje}`;
-            statusDiv.style.color = '#e74c3c';
+            statusDiv.innerText = 'Error al subir.';
         }
     } catch (error) {
-        statusDiv.innerText = 'No se pudo conectar con el servidor.';
-        statusDiv.style.color = '#e74c3c';
+        statusDiv.innerText = 'Error de conexión.';
     }
 }
 
-// 2. Función para obtener la lista de archivos y mostrarlos
+// 2. Función para obtener la lista de archivos DESDE LA BASE DE DATOS
 async function cargarArchivos() {
     const lista = document.getElementById('fileList');
-    lista.innerHTML = '<li>Cargando archivos del servidor...</li>';
+    lista.innerHTML = '<li>Cargando...</li>';
 
     try {
         const respuesta = await fetch(`${URL_API}/files`);
-        const archivos = await respuesta.json();
+        const archivos = await respuesta.json(); // Ahora 'archivos' es un array de objetos
 
         lista.innerHTML = '';
 
         if (archivos.length === 0) {
-            lista.innerHTML = '<li>La nube está vacía. Sube tu primer documento técnico.</li>';
+            lista.innerHTML = '<li>La nube está vacía.</li>';
             return;
         }
 
         archivos.forEach(archivo => {
             const li = document.createElement('li');
-            // Aquí cambiamos el texto plano por un enlace <a> hacia tu servidor de Linux
+            // Nota: usamos archivo.nombre y archivo.id que vienen de SQLite
             li.innerHTML = `
-                📁 <a href="https://showed-qualifying-highest-definitely.trycloudflare.com/uploads/${archivo}" target="_blank" style="text-decoration: none; color: #3498db; font-weight: bold; margin-left: 10px;">
-                    ${archivo}
+                📁 <a href="https://showed-qualifying-highest-definitely.trycloudflare.com/uploads/${archivo.nombre}" target="_blank">
+                    ${archivo.nombre}
                 </a>
+                <button onclick="borrarArchivo(${archivo.id})" style="margin-left: auto; cursor: pointer;">Borrar</button>
             `;
             lista.appendChild(li);
         });
     } catch (error) {
-        lista.innerHTML = '<li style="color: #e74c3c;">Error al conectar con el almacenamiento.</li>';
+        lista.innerHTML = '<li style="color: red;">Error al conectar con la base de datos.</li>';
     }
 }
 
-// Ejecutar la carga de archivos al abrir la página
-cargarArchivos();
+// 3. Nueva función para borrar
+async function borrarArchivo(id) {
+    if(confirm('¿Seguro que quieres borrar este archivo?')) {
+        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
+        cargarArchivos(); // Recargar la lista después de borrar
+    }
+}
 
-// CÓDIGO NUEVO: Registrar el Service Worker para hacerla instalable
+// Registro del Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registrado con éxito.', reg.scope))
-            .catch(err => console.error('Error al registrar el Service Worker:', err));
+            .catch(err => console.error('Error SW:', err));
     });
 }
+
+// Ejecutar al abrir
+cargarArchivos();
