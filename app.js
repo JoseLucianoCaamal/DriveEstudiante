@@ -1,3 +1,4 @@
+// URL de tu túnel - Asegúrate de que coincida con tu terminal
 const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
 let currentPath = '/';
 
@@ -20,10 +21,10 @@ async function cargarArchivos(ruta = '/') {
             if (a.esCarpeta) {
                 li.innerHTML = `📁 <span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; color:blue;">${a.nombre}</span>`;
             } else {
-                const urlDescarga = URL_API.replace('/api', '') + '/uploads/' + encodeURIComponent(a.nombre);
-                li.innerHTML = `📄 <a href="${urlDescarga}" target="_blank">${a.nombre}</a>`;
+                // Función abrirArchivo para visualizar o descargar
+                li.innerHTML = `📄 <span onclick="abrirArchivo('${a.nombre}')" style="cursor:pointer; color:blue; font-weight:bold;">${a.nombre}</span>`;
             }
-            // Botones de acción (Borrar y Renombrar)
+            
             li.innerHTML += `
                 <div style="margin-left: auto;">
                     <button onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')" style="padding:5px; margin-right:5px;">✏️</button>
@@ -34,15 +35,26 @@ async function cargarArchivos(ruta = '/') {
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
+// Nueva función: Visualizar o Descargar
+function abrirArchivo(nombre) {
+    const url = URL_API.replace('/api', '') + '/uploads/' + encodeURIComponent(nombre);
+    window.open(url, '_blank');
+}
+
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
-    if (fileInput.files.length === 0) return alert('Selecciona un archivo.');
+    if (fileInput.files.length === 0) return alert('Selecciona al menos un archivo.');
     
-    const formData = new FormData();
-    formData.append('archivoEstudiante', fileInput.files[0]);
-    formData.append('rutaPadre', currentPath);
+    // Subida múltiple: procesa cada archivo seleccionado
+    for (let i = 0; i < fileInput.files.length; i++) {
+        const formData = new FormData();
+        formData.append('archivoEstudiante', fileInput.files[i]);
+        formData.append('rutaPadre', currentPath);
+        
+        await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
+    }
     
-    await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
+    fileInput.value = ''; // Limpia el input tras subir
     cargarArchivos(currentPath);
 }
 
