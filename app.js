@@ -7,19 +7,20 @@ async function cargarArchivos(ruta = '/') {
     lista.innerHTML = '<li>Cargando...</li>';
     
     try {
+        // Se añade &t=${Date.now()} para evitar caché en móviles
         const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`, { cache: 'no-store' });
         const archivos = await res.json();
         lista.innerHTML = '';
         
         if (ruta !== '/') {
-            lista.innerHTML += `<li onclick="cargarArchivos('/')" style="cursor:pointer; color:red;">⬅️ Volver a la raíz</li>`;
+            lista.innerHTML += `<li onclick="cargarArchivos('/')" style="cursor:pointer; color:#6366f1;">⬅️ Volver a la raíz</li>`;
         }
 
         archivos.forEach(a => {
             const li = document.createElement('li');
             const icon = a.esCarpeta ? '📁' : '📄';
             
-            // Estructura moderna con botones estéticos
+            // Estructura moderna con clases CSS btn-icon y btn-zip
             li.innerHTML = `
                 <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
                 <div style="flex-grow: 1;">
@@ -28,7 +29,7 @@ async function cargarArchivos(ruta = '/') {
                 </div>
                 <div style="display: flex; gap: 8px;">
                     ${a.esCarpeta ? 
-                        `<a href="${URL_API.replace('/api', '')}/download-folder/${encodeURIComponent(a.nombre)}"><button class="btn-zip">⬇️ Zip</button></a>` : 
+                        `<a href="${URL_API.replace('/api', '')}/download-folder/${encodeURIComponent(a.nombre)}"><button class="btn-zip">⬇️ ZIP</button></a>` : 
                         `<a href="${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}" download><button class="btn-icon">⬇️</button></a>`
                     }
                     <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
@@ -61,7 +62,6 @@ async function subirArchivo() {
     cargarArchivos(currentPath);
 }
 
-// ... (tus funciones crearCarpeta, borrar y renombrar se mantienen iguales)
 async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
@@ -74,7 +74,7 @@ async function crearCarpeta() {
 }
 
 async function borrar(id) {
-    if(confirm('¿Borrar?')) {
+    if(confirm('¿Borrar este elemento?')) {
         await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
         cargarArchivos(currentPath);
     }
