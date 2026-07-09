@@ -1,4 +1,4 @@
-const URL_API = 'https://investigations-modified-counsel-boys.trycloudflare.com/api';
+const URL_API = 'https://showed-qualifying-highest-definitely.trycloudflare.com/api';
 
 // 1. Función para subir un archivo al servidor
 async function subirArchivo() {
@@ -61,9 +61,9 @@ async function cargarArchivos() {
             const li = document.createElement('li');
             // Aquí cambiamos el texto plano por un enlace <a> hacia tu servidor de Linux
             li.innerHTML = `
-                📁 <a href="https://investigations-modified-counsel-boys.trycloudflare.com/uploads/${archivo}" target="_blank" style="text-decoration: none; color: #3498db; font-weight: bold; margin-left: 10px;">
+                📁 <a href="https://showed-qualifying-highest-definitely.trycloudflare.com/uploads/${archivo}" target="_blank" style="text-decoration: none; color: #3498db; font-weight: bold; margin-left: 10px;">
                     ${archivo}
-               </a>
+                </a>
             `;
             lista.appendChild(li);
         });
