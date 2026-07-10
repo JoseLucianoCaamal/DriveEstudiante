@@ -33,6 +33,20 @@
         </div>
     </div>
 
+    <!-- NUEVO: Modal de Login Personalizado -->
+    <div id="loginModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: white;">Iniciar Sesión</h3>
+            <input type="text" id="usernameInput" placeholder="Usuario" class="modal-input" autocomplete="off">
+            <input type="password" id="passwordInput" placeholder="Contraseña" class="modal-input">
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="cerrarModalLogin()" class="btn-modal btn-cancelar">Cancelar</button>
+                <button id="confirmLoginBtn" onclick="procesarLogin()" class="btn-modal btn-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

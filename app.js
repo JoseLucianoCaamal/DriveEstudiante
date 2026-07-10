@@ -14,7 +14,6 @@ window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
 };
 
-// Función para mostrar/ocultar botones dependiendo del Login
 function actualizarUI() {
     const btn = document.getElementById('loginBtn');
     if (isLoggedIn()) {
@@ -29,31 +28,55 @@ async function init() {
     cargarArchivos('/', true);
 }
 
-async function toggleLogin() {
+// --- NUEVA LÓGICA DEL MODAL DE LOGIN ---
+function toggleLogin() {
     if (isLoggedIn()) {
         localStorage.removeItem('akkoToken');
         actualizarUI();
-        alert("Sesión cerrada en este dispositivo");
+        alert("Sesión cerrada en este dispositivo"); // Puedes cambiar esto por un modal de éxito luego si quieres
+        cargarArchivos(currentPath);
     } else {
-        const username = prompt("Usuario:");
-        const password = prompt("Contraseña:");
-        if (!username || !password) return;
-        
-        const res = await fetch(`${URL_API}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            localStorage.setItem('akkoToken', data.token);
-            actualizarUI();
-            alert("Bienvenido");
-        } else { alert("Acceso denegado"); }
+        // Abrimos el modal personalizado
+        document.getElementById('loginModal').style.display = 'flex';
+        document.getElementById('usernameInput').value = '';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('usernameInput').focus();
     }
-    cargarArchivos(currentPath);
 }
+
+function cerrarModalLogin() {
+    document.getElementById('loginModal').style.display = 'none';
+}
+
+async function procesarLogin() {
+    const username = document.getElementById('usernameInput').value;
+    const password = document.getElementById('passwordInput').value;
+    
+    if (!username || !password) return;
+    
+    // Mostramos que está cargando
+    document.getElementById('confirmLoginBtn').innerText = '...';
+    
+    const res = await fetch(`${URL_API}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    
+    // Restauramos el texto del botón
+    document.getElementById('confirmLoginBtn').innerText = 'Aceptar';
+    
+    if (data.success) {
+        localStorage.setItem('akkoToken', data.token);
+        cerrarModalLogin();
+        actualizarUI();
+        cargarArchivos(currentPath);
+    } else { 
+        alert("Acceso denegado"); 
+    }
+}
+// ----------------------------------------
 
 async function cargarArchivos(ruta = '/', pushHistory = true) {
     currentPath = ruta;
@@ -75,7 +98,6 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
         archivos.forEach(a => {
             const li = document.createElement('li');
             
-            // Flexbox para adaptarse a pantallas móviles
             li.style.display = 'flex';
             li.style.flexWrap = 'wrap';
             li.style.alignItems = 'center';
@@ -91,7 +113,6 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
                 ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600; word-break: break-word;">${a.nombre}</span>`
                 : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none; word-break: break-word;"><div class="file-name">${a.nombre}</div></a>`;
 
-            // Mini Switch individual con márgenes corregidos
             const btnPrivacidad = isLoggedIn() ? `
                 <label class="switch" style="transform: scale(0.65); margin: 0 -8px;" title="${a.esPrivada ? 'Hacer Público' : 'Hacer Privado'}">
                     <input type="checkbox" ${a.esPrivada ? 'checked' : ''} onchange="cambiarPrivacidad(${a.id}, ${a.esPrivada})">
@@ -129,7 +150,7 @@ async function subirArchivo() {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
-        formData.append('esPrivada', '0'); // Entra público por defecto
+        formData.append('esPrivada', '0'); 
         
         await fetch(`${URL_API}/upload`, { 
             method: 'POST', 
@@ -144,13 +165,14 @@ async function subirArchivo() {
 }
 
 async function crearCarpeta() {
+    // Si quisieras cambiar el prompt de la carpeta también, se haría un modal parecido, por ahora lo dejamos así.
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
     
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ nombre, rutaPadre: currentPath, esPrivada: 0 }) // Entra público por defecto
+        body: JSON.stringify({ nombre, rutaPadre: currentPath, esPrivada: 0 }) 
     });
     cargarArchivos(currentPath);
 }
