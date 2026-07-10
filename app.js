@@ -8,7 +8,7 @@ function isLoggedIn() { return !!getToken(); }
 function getHeaders(esUpload = false) {
     const headers = { 
         'x-admin-token': getToken(),
-        'x-username': getUsername() // Necesario para que el servidor filtre por 'duenio'
+        'x-username': getUsername() 
     };
     if (!esUpload) headers['Content-Type'] = 'application/json';
     return headers;
@@ -111,7 +111,6 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
             const icon = a.esCarpeta ? '📁' : '📄';
             const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
             
-            // Re-integración del Switch de Privacidad
             const btnPrivacidad = isLoggedIn() ? `
                 <label class="switch" style="transform: scale(0.65); margin: 0 -8px;" title="${a.esPrivada ? 'Hacer Público' : 'Hacer Privado'}">
                     <input type="checkbox" ${a.esPrivada ? 'checked' : ''} onchange="cambiarPrivacidad(${a.id}, ${a.esPrivada})">
@@ -126,6 +125,7 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
                 <div style="display: flex; align-items: center; gap: 5px;">
                     ${btnPrivacidad}
                     <a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>
+                    <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
                     <button class="btn-icon" onclick="borrar(${a.id})">🗑️</button>
                 </div>`;
             lista.appendChild(li);
@@ -141,7 +141,6 @@ async function procesarCrearCarpeta() {
     const nombre = document.getElementById('folderNameInput').value;
     if (!nombre) return;
     document.getElementById('folderModal').style.display = 'none';
-    // Nota: El server.js ahora asigna esPrivada automáticamente
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',
         headers: getHeaders(),
@@ -162,6 +161,21 @@ async function subirArchivo() {
     cargarArchivos(currentPath);
 }
 
+async function borrar(id) {
+    if(confirm('¿Borrar definitivamente?')) {
+        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE', headers: getHeaders() });
+        cargarArchivos(currentPath);
+    }
+}
+
+async function renombrar(id, actual) {
+    const nuevo = prompt("Nuevo nombre:", actual);
+    if (nuevo) {
+        await fetch(`${URL_API}/rename/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ nuevoNombre: nuevo }) });
+        cargarArchivos(currentPath);
+    }
+}
+
 async function cambiarPrivacidad(id, estadoActual) {
     const nuevoEstado = estadoActual ? 0 : 1; 
     await fetch(`${URL_API}/toggle-privacy/${id}`, {
@@ -170,13 +184,6 @@ async function cambiarPrivacidad(id, estadoActual) {
         body: JSON.stringify({ esPrivada: nuevoEstado })
     });
     cargarArchivos(currentPath); 
-}
-
-async function borrar(id) {
-    if(confirm('¿Borrar definitivamente?')) {
-        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE', headers: getHeaders() });
-        cargarArchivos(currentPath);
-    }
 }
 
 async function init() {
