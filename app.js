@@ -1,34 +1,48 @@
 const URL_API = 'https://expressed-anna-brian-seattle.trycloudflare.com/api';
 let currentPath = '/';
 
-// Funciones para manejar la sesión localmente
 function getToken() { return localStorage.getItem('akkoToken') || ''; }
 function isLoggedIn() { return !!getToken(); }
 
-// Genera las cabeceras para que el servidor sepa quién somos
 function getHeaders(esUpload = false) {
     const headers = { 'x-admin-token': getToken() };
     if (!esUpload) headers['Content-Type'] = 'application/json';
     return headers;
 }
 
-// 1. Navegación
 window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
 };
 
-async function init() {
+// Función para mostrar/ocultar botones dependiendo del Login
+function actualizarUI() {
     const btn = document.getElementById('loginBtn');
-    if (btn) btn.innerText = isLoggedIn() ? "Cerrar Sesión" : "Login AKKO";
+    const privacyControl = document.getElementById('privacyControl');
+    
+    if (isLoggedIn()) {
+        if (btn) btn.innerText = "Cerrar Sesión";
+        // Mostramos el switch de privacidad
+        if (privacyControl) privacyControl.style.display = "flex";
+    } else {
+        if (btn) btn.innerText = "Login AKKO";
+        // Ocultamos el switch de privacidad
+        if (privacyControl) privacyControl.style.display = "none";
+        
+        // Reseteamos el switch a "Público" por seguridad al cerrar sesión
+        const toggle = document.getElementById('privacyToggle');
+        if(toggle) toggle.checked = false;
+    }
+}
+
+async function init() {
+    actualizarUI();
     cargarArchivos('/', true);
 }
 
-// 2. Login y Logout
 async function toggleLogin() {
-    const btn = document.getElementById('loginBtn');
     if (isLoggedIn()) {
-        localStorage.removeItem('akkoToken'); // Borramos el token del dispositivo
-        btn.innerText = "Login";
+        localStorage.removeItem('akkoToken');
+        actualizarUI();
         alert("Sesión cerrada en este dispositivo");
     } else {
         const username = prompt("Usuario:");
@@ -43,15 +57,14 @@ async function toggleLogin() {
         const data = await res.json();
         
         if (data.success) {
-            localStorage.setItem('akkoToken', data.token); // Guardamos el token en este navegador
-            btn.innerText = "Cerrar Sesión";
-            alert("Bienvenido");
+            localStorage.setItem('akkoToken', data.token);
+            actualizarUI();
+            alert("Bienvenido AKKO");
         } else { alert("Acceso denegado"); }
     }
     cargarArchivos(currentPath);
 }
 
-// 3. Renderizado de Archivos
 async function cargarArchivos(ruta = '/', pushHistory = true) {
     currentPath = ruta;
     if (pushHistory) history.pushState({ path: ruta }, '', '');
@@ -96,28 +109,25 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
-// 4. Subida y Creación
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
     const statusDiv = document.getElementById('status');
     if (fileInput.files.length === 0) return alert('Selecciona archivos.');
     if (statusDiv) statusDiv.innerText = 'Subiendo...';
     
-    // Nueva lógica: Preguntar si es privado (solo si está logueado)
-    let esPrivada = false;
-    if (isLoggedIn()) {
-        esPrivada = confirm("¿Hacer estos archivos PRIVADOS (solo para ti)?");
-    }
+    // Leemos silenciosamente la posición del Switch
+    const toggle = document.getElementById('privacyToggle');
+    const esPrivada = (isLoggedIn() && toggle && toggle.checked);
     
     for (let i = 0; i < fileInput.files.length; i++) {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
-        formData.append('esPrivada', esPrivada ? '1' : '0'); // Enviamos privacidad al servidor
+        formData.append('esPrivada', esPrivada ? '1' : '0'); 
         
         await fetch(`${URL_API}/upload`, { 
             method: 'POST', 
-            headers: getHeaders(true), // true para no enviar JSON header en FormData
+            headers: getHeaders(true), 
             body: formData 
         });
     }
@@ -131,10 +141,9 @@ async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
     
-    let esPrivada = false;
-    if (isLoggedIn()) {
-        esPrivada = confirm("¿Hacer esta carpeta PRIVADA (solo para AKKO)?");
-    }
+    // Leemos silenciosamente la posición del Switch
+    const toggle = document.getElementById('privacyToggle');
+    const esPrivada = (isLoggedIn() && toggle && toggle.checked);
     
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',

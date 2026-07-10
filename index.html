@@ -15,7 +15,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>Drive  JLCA</h2>
+        <h2>Drive JLCA</h2>
         <p class="subtitle">Almacenamiento seguro para tus reportes, datasheets y proyectos</p>
         
         <div class="upload-box">
@@ -24,7 +24,18 @@
             <button onclick="subirArchivo()">Subir Archivo</button>
             <button onclick="crearCarpeta()" style="background: var(--accent); margin-top: 10px;">Crear Carpeta</button>
             <div id="status"></div>
-            <button id="loginBtn" onclick="toggleLogin()" style="background: #4f46e5; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">Login</button>
+            
+            <button id="loginBtn" onclick="toggleLogin()" style="background: #4f46e5; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%;">Login</button>
+            
+            <!-- NUEVO: Toggle de Privacidad (Oculto por defecto) -->
+            <div id="privacyControl" style="display: none; margin-top: 15px; align-items: center; justify-content: center; gap: 10px;">
+                <span style="font-size: 14px; font-weight: 600; color: #a1a1aa;">Público</span>
+                <label class="switch">
+                    <input type="checkbox" id="privacyToggle">
+                    <span class="slider round"></span>
+                </label>
+                <span style="font-size: 14px; font-weight: 600; color: #ef4444;">Privado</span>
+            </div>
         </div>
 
         <div class="file-list-section">
