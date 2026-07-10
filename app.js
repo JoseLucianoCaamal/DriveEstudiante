@@ -1,4 +1,4 @@
-const URL_API = '[https://expressed-anna-brian-seattle.trycloudflare.com/api](https://expressed-anna-brian-seattle.trycloudflare.com/api)';
+const URL_API = 'https://expressed-anna-brian-seattle.trycloudflare.com/api';
 let currentPath = '/';
 
 // Función para Login
@@ -15,7 +15,7 @@ async function login() {
         const data = await res.json();
         if (data.success) {
             alert("Bienvenido AKKO");
-            cargarArchivos('/'); // Recarga la vista con permisos de jefe
+            cargarArchivos('/'); // Recarga la vista con acceso total
         } else {
             alert("Acceso denegado");
         }
@@ -46,6 +46,7 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
         archivos.forEach(a => {
             const li = document.createElement('li');
             const icon = a.esCarpeta ? '📁' : '📄';
+            // Construcción correcta de URLs
             const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
             const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
             
@@ -84,10 +85,7 @@ async function subirArchivo() {
 async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
-    
-    // Nueva lógica: Preguntar si es privada
     const esPrivada = confirm("¿Hacer esta carpeta PRIVADA (solo para AKKO)?");
-    
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
