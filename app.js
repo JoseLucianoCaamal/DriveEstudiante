@@ -16,9 +16,12 @@ function mostrarAlerta(m) { document.getElementById('alertMessage').innerText = 
 function actualizarUI() {
     const btn = document.getElementById('loginBtn');
     const adminBtn = document.getElementById('adminBtn');
+    const token = getToken();
+    
     if (isLoggedIn()) {
         btn.innerText = "Cerrar Sesión";
-        adminBtn.style.display = (getToken() === "TOKEN_AKKO_PRO_2026") ? "block" : "none";
+        // Ahora solo muestra el botón de admin si el token es exactamente el del Jefe
+        adminBtn.style.display = (token === "TOKEN_AKKO_PRO_2026") ? "block" : "none";
     } else {
         btn.innerText = "Login";
         adminBtn.style.display = "none";
