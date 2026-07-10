@@ -2,15 +2,22 @@ const URL_API = 'https://expressed-anna-brian-seattle.trycloudflare.com/api';
 let currentPath = '/';
 
 function getToken() { return localStorage.getItem('akkoToken') || ''; }
+function getUsername() { return localStorage.getItem('akkoUser') || ''; }
 function isLoggedIn() { return !!getToken(); }
 
 function getHeaders(esUpload = false) {
-    const headers = { 'x-admin-token': getToken() };
+    const headers = { 
+        'x-admin-token': getToken(),
+        'x-username': getUsername() // Importante para el servidor
+    };
     if (!esUpload) headers['Content-Type'] = 'application/json';
     return headers;
 }
 
-// Funciones de UI
+window.onpopstate = function(event) {
+    cargarArchivos(event.state ? event.state.path : '/', false);
+};
+
 function mostrarAlerta(m) { document.getElementById('alertMessage').innerText = m; document.getElementById('alertModal').style.display = 'flex'; }
 
 function actualizarUI() {
@@ -20,7 +27,6 @@ function actualizarUI() {
     
     if (isLoggedIn()) {
         btn.innerText = "Cerrar Sesión";
-        // Ahora solo muestra el botón de admin si el token es exactamente el del Jefe
         adminBtn.style.display = (token === "TOKEN_AKKO_PRO_2026") ? "block" : "none";
     } else {
         btn.innerText = "Login";
@@ -28,7 +34,7 @@ function actualizarUI() {
     }
 }
 
-// Gestión de Usuarios (Admin)
+// --- GESTIÓN DE USUARIOS (ADMIN) ---
 async function abrirAdmin() {
     document.getElementById('adminModal').style.display = 'flex';
     const res = await fetch(`${URL_API}/usuarios`, { headers: getHeaders() });
@@ -54,10 +60,11 @@ async function eliminarUsuario(id) {
     abrirAdmin();
 }
 
-// Lógica de Login y Archivos (Mantenida igual)
+// --- LOGIN Y SESIÓN ---
 function toggleLogin() {
     if (isLoggedIn()) {
         localStorage.removeItem('akkoToken');
+        localStorage.removeItem('akkoUser');
         actualizarUI();
         mostrarAlerta("Sesión cerrada");
         cargarArchivos('/');
@@ -69,16 +76,23 @@ function cerrarModalLogin() { document.getElementById('loginModal').style.displa
 async function procesarLogin() {
     const username = document.getElementById('usernameInput').value;
     const password = document.getElementById('passwordInput').value;
-    const res = await fetch(`${URL_API}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username, password })});
+    const res = await fetch(`${URL_API}/login`, { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify({ username, password })
+    });
     const data = await res.json();
+    
     if (data.success) {
         localStorage.setItem('akkoToken', data.token);
+        localStorage.setItem('akkoUser', username); // Guardamos quién inició sesión
         cerrarModalLogin();
         actualizarUI();
         cargarArchivos('/');
     } else { mostrarAlerta("Acceso denegado"); }
 }
 
+// --- ARCHIVOS Y CARPETAS ---
 async function cargarArchivos(ruta = '/', pushHistory = true) {
     currentPath = ruta;
     if (pushHistory) history.pushState({ path: ruta }, '', '');
@@ -93,39 +107,26 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
         }
         archivos.forEach(a => {
             const li = document.createElement('li');
-            li.style.display = 'flex'; li.style.flexWrap = 'wrap'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.gap = '10px';
+            li.style.display = 'flex'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between';
             const icon = a.esCarpeta ? '📁' : '📄';
             const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
-            const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
-            const nombreElement = a.esCarpeta 
-                ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600; word-break: break-word;">${a.nombre}</span>`
-                : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none; word-break: break-word;"><div class="file-name">${a.nombre}</div></a>`;
-            const btnPrivacidad = isLoggedIn() ? `
-                <label class="switch" style="transform: scale(0.65); margin: 0 -8px;" title="${a.esPrivada ? 'Hacer Público' : 'Hacer Privado'}">
-                    <input type="checkbox" ${a.esPrivada ? 'checked' : ''} onchange="cambiarPrivacidad(${a.id}, ${a.esPrivada})">
-                    <span class="slider round"></span>
-                </label>` : '';
+            
             li.innerHTML = `
-                <div style="display: flex; align-items: center; flex: 1; min-width: 120px;">
-                    <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
-                    <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
+                <div style="display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 10px;">${icon}</span>
+                    <span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer;">${a.nombre}</span>
                 </div>
-                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-                    ${btnPrivacidad}
-                    ${a.esCarpeta ? `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`}
-                    ${isLoggedIn() ? `
-                        <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
-                        <button class="btn-icon" onclick="borrar(${a.id})">🗑️</button>` : ''}
+                <div>
+                    <a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>
+                    <button class="btn-icon" onclick="borrar(${a.id})">🗑️</button>
                 </div>`;
             lista.appendChild(li);
         });
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
-function crearCarpeta() {
+async function crearCarpeta() {
     document.getElementById('folderModal').style.display = 'flex';
-    document.getElementById('folderNameInput').value = '';
-    document.getElementById('folderNameInput').focus();
 }
 
 async function procesarCrearCarpeta() {
@@ -135,7 +136,7 @@ async function procesarCrearCarpeta() {
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ nombre, rutaPadre: currentPath, esPrivada: 0 }) 
+        body: JSON.stringify({ nombre, rutaPadre: currentPath }) 
     });
     cargarArchivos(currentPath);
 }
@@ -180,6 +181,11 @@ async function cambiarPrivacidad(id, estadoActual) {
         body: JSON.stringify({ esPrivada: nuevoEstado })
     });
     cargarArchivos(currentPath); 
+}
+
+async function init() {
+    actualizarUI();
+    cargarArchivos('/', true);
 }
 
 init();
