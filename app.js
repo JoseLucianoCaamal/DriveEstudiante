@@ -10,41 +10,55 @@ function getHeaders(esUpload = false) {
     return headers;
 }
 
-window.onpopstate = function(event) {
-    cargarArchivos(event.state ? event.state.path : '/', false);
-};
-
-function mostrarAlerta(mensaje) {
-    document.getElementById('alertMessage').innerText = mensaje;
-    document.getElementById('alertModal').style.display = 'flex';
-}
+// Funciones de UI
+function mostrarAlerta(m) { document.getElementById('alertMessage').innerText = m; document.getElementById('alertModal').style.display = 'flex'; }
 
 function actualizarUI() {
     const btn = document.getElementById('loginBtn');
+    const adminBtn = document.getElementById('adminBtn');
     if (isLoggedIn()) {
-        if (btn) btn.innerText = "Cerrar Sesión";
+        btn.innerText = "Cerrar Sesión";
+        adminBtn.style.display = (getToken() === "TOKEN_AKKO_PRO_2026") ? "block" : "none";
     } else {
-        if (btn) btn.innerText = "Login";
+        btn.innerText = "Login";
+        adminBtn.style.display = "none";
     }
 }
 
-async function init() {
-    actualizarUI();
-    cargarArchivos('/', true);
+// Gestión de Usuarios (Admin)
+async function abrirAdmin() {
+    document.getElementById('adminModal').style.display = 'flex';
+    const res = await fetch(`${URL_API}/usuarios`, { headers: getHeaders() });
+    const users = await res.json();
+    document.getElementById('userList').innerHTML = users.map(u => `
+        <li style="display:flex; justify-content:space-between; margin-bottom: 8px;">
+            ${u.username} <button onclick="eliminarUsuario(${u.id})" class="btn-icon">🗑️</button>
+        </li>`).join('');
 }
 
+async function crearUsuario() {
+    const username = document.getElementById('newUsername').value;
+    const password = document.getElementById('newPassword').value;
+    await fetch(`${URL_API}/usuarios/crear`, {
+        method: 'POST', headers: getHeaders(),
+        body: JSON.stringify({ username, password })
+    });
+    abrirAdmin();
+}
+
+async function eliminarUsuario(id) {
+    await fetch(`${URL_API}/usuarios/${id}`, { method: 'DELETE', headers: getHeaders() });
+    abrirAdmin();
+}
+
+// Lógica de Login y Archivos (Mantenida igual)
 function toggleLogin() {
     if (isLoggedIn()) {
         localStorage.removeItem('akkoToken');
         actualizarUI();
-        mostrarAlerta("Sesión cerrada en este dispositivo"); 
-        cargarArchivos(currentPath);
-    } else {
-        document.getElementById('loginModal').style.display = 'flex';
-        document.getElementById('usernameInput').value = '';
-        document.getElementById('passwordInput').value = '';
-        document.getElementById('usernameInput').focus();
-    }
+        mostrarAlerta("Sesión cerrada");
+        cargarArchivos('/');
+    } else { document.getElementById('loginModal').style.display = 'flex'; }
 }
 
 function cerrarModalLogin() { document.getElementById('loginModal').style.display = 'none'; }
@@ -52,20 +66,13 @@ function cerrarModalLogin() { document.getElementById('loginModal').style.displa
 async function procesarLogin() {
     const username = document.getElementById('usernameInput').value;
     const password = document.getElementById('passwordInput').value;
-    if (!username || !password) return;
-    document.getElementById('confirmLoginBtn').innerText = '...';
-    const res = await fetch(`${URL_API}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
+    const res = await fetch(`${URL_API}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username, password })});
     const data = await res.json();
-    document.getElementById('confirmLoginBtn').innerText = 'Aceptar';
     if (data.success) {
         localStorage.setItem('akkoToken', data.token);
         cerrarModalLogin();
         actualizarUI();
-        cargarArchivos(currentPath);
+        cargarArchivos('/');
     } else { mostrarAlerta("Acceso denegado"); }
 }
 

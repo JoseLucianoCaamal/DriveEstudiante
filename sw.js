@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drive-estudiantil-v5.9';
+const CACHE_NAME = 'drive-estudiantil-v6.0';
 const urlsToCache = ['./', './index.html', './app.js', './manifest.json', './Img/akko.jpeg'];
 
 self.addEventListener('install', event => {
