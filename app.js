@@ -24,14 +24,14 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
         archivos.forEach(a => {
             const li = document.createElement('li');
             const icon = a.esCarpeta ? '📁' : '📄';
-            const urlDescarga = URL_API.replace('/api', '') + '/uploads/' + encodeURIComponent(a.nombre);
+            const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
             
             const nombreElement = a.esCarpeta 
                 ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600;">${a.nombre}</span>`
                 : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none;"><div class="file-name">${a.nombre}</div></a>`;
 
-            // URL corregida con ?nombre=
-            const urlZip = `${URL_API.replace('/api', '')}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
+            // Construcción correcta de la URL para ZIP
+            const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
 
             li.innerHTML = `
                 <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
@@ -50,33 +50,27 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
+// ... Las funciones subirArchivo, crearCarpeta, borrar y renombrar se mantienen iguales.
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
     const statusDiv = document.getElementById('status');
     if (fileInput.files.length === 0) return alert('Selecciona archivos.');
-    
     statusDiv.innerText = 'Subiendo...';
-    
     for (let i = 0; i < fileInput.files.length; i++) {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
         await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
     }
-    
-    fileInput.value = ''; 
-    fileInput.type = 'text'; 
-    fileInput.type = 'file'; 
-    statusDiv.innerText = ''; 
-    cargarArchivos(currentPath);
+    fileInput.value = ''; fileInput.type = 'text'; fileInput.type = 'file'; 
+    statusDiv.innerText = ''; cargarArchivos(currentPath);
 }
 
 async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
     await fetch(`${URL_API}/create-folder`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ nombre, rutaPadre: currentPath })
     });
     cargarArchivos(currentPath);
@@ -93,8 +87,7 @@ async function renombrar(id, actual) {
     const nuevo = prompt("Nuevo nombre:", actual);
     if (nuevo) {
         await fetch(`${URL_API}/rename/${id}`, { 
-            method: 'PATCH', 
-            headers: {'Content-Type': 'application/json'},
+            method: 'PATCH', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ nuevoNombre: nuevo }) 
         });
         cargarArchivos(currentPath);
