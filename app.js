@@ -1,32 +1,35 @@
 const URL_API = 'https://expressed-anna-brian-seattle.trycloudflare.com/api';
 let currentPath = '/';
-let isLoggedIn = false;
 
-// 1. Navegación en el celular (Evita que se cierre la app)
+// Funciones para manejar la sesión localmente
+function getToken() { return localStorage.getItem('akkoToken') || ''; }
+function isLoggedIn() { return !!getToken(); }
+
+// Genera las cabeceras para que el servidor sepa quién somos
+function getHeaders(esUpload = false) {
+    const headers = { 'x-admin-token': getToken() };
+    if (!esUpload) headers['Content-Type'] = 'application/json';
+    return headers;
+}
+
+// 1. Navegación
 window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
 };
 
-// 2. Estado de Sesión Inicial
 async function init() {
-    try {
-        const res = await fetch(`${URL_API}/check-session`);
-        const data = await res.json();
-        isLoggedIn = data.loggedIn;
-        const btn = document.getElementById('loginBtn');
-        if (btn) btn.innerText = isLoggedIn ? "Cerrar Sesión" : "Login";
-    } catch (e) { console.error("Servidor offline"); }
+    const btn = document.getElementById('loginBtn');
+    if (btn) btn.innerText = isLoggedIn() ? "Cerrar Sesión" : "Login AKKO";
     cargarArchivos('/', true);
 }
 
-// 3. Botón Login/Logout
+// 2. Login y Logout
 async function toggleLogin() {
     const btn = document.getElementById('loginBtn');
-    if (isLoggedIn) {
-        await fetch(`${URL_API}/logout`, { method: 'POST' });
-        isLoggedIn = false;
+    if (isLoggedIn()) {
+        localStorage.removeItem('akkoToken'); // Borramos el token del dispositivo
         btn.innerText = "Login";
-        alert("Sesión cerrada");
+        alert("Sesión cerrada en este dispositivo");
     } else {
         const username = prompt("Usuario:");
         const password = prompt("Contraseña:");
@@ -38,8 +41,9 @@ async function toggleLogin() {
             body: JSON.stringify({ username, password })
         });
         const data = await res.json();
+        
         if (data.success) {
-            isLoggedIn = true;
+            localStorage.setItem('akkoToken', data.token); // Guardamos el token en este navegador
             btn.innerText = "Cerrar Sesión";
             alert("Bienvenido");
         } else { alert("Acceso denegado"); }
@@ -47,7 +51,7 @@ async function toggleLogin() {
     cargarArchivos(currentPath);
 }
 
-// 4. Renderizado Completo de Archivos
+// 3. Renderizado de Archivos
 async function cargarArchivos(ruta = '/', pushHistory = true) {
     currentPath = ruta;
     if (pushHistory) history.pushState({ path: ruta }, '', '');
@@ -55,7 +59,9 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
     const lista = document.getElementById('fileList');
     lista.innerHTML = '<li>Cargando...</li>';
     try {
-        const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`);
+        const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`, {
+            headers: getHeaders()
+        });
         const archivos = await res.json();
         lista.innerHTML = '';
 
@@ -67,7 +73,6 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
             const li = document.createElement('li');
             const icon = a.esCarpeta ? '📁' : '📄';
             
-            // URLs restauradas para descargas y visualización
             const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
             const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
 
@@ -80,7 +85,7 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
                 <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
                 <div style="display: flex; gap: 8px;">
                     ${a.esCarpeta ? `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`}
-                    ${isLoggedIn ? `
+                    ${isLoggedIn() ? `
                         <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
                         <button class="btn-icon" onclick="borrar(${a.id})">🗑️</button>
                     ` : ''}
@@ -91,18 +96,30 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
-// 5. Acciones Completas
+// 4. Subida y Creación
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
     const statusDiv = document.getElementById('status');
     if (fileInput.files.length === 0) return alert('Selecciona archivos.');
     if (statusDiv) statusDiv.innerText = 'Subiendo...';
     
+    // Nueva lógica: Preguntar si es privado (solo si está logueado)
+    let esPrivada = false;
+    if (isLoggedIn()) {
+        esPrivada = confirm("¿Hacer estos archivos PRIVADOS (solo para ti)?");
+    }
+    
     for (let i = 0; i < fileInput.files.length; i++) {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
-        await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
+        formData.append('esPrivada', esPrivada ? '1' : '0'); // Enviamos privacidad al servidor
+        
+        await fetch(`${URL_API}/upload`, { 
+            method: 'POST', 
+            headers: getHeaders(true), // true para no enviar JSON header en FormData
+            body: formData 
+        });
     }
     
     fileInput.value = '';
@@ -115,14 +132,13 @@ async function crearCarpeta() {
     if (!nombre) return;
     
     let esPrivada = false;
-    // Solo permitimos hacer privada si estás logueado
-    if (isLoggedIn) {
+    if (isLoggedIn()) {
         esPrivada = confirm("¿Hacer esta carpeta PRIVADA (solo para AKKO)?");
     }
     
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ nombre, rutaPadre: currentPath, esPrivada: esPrivada ? 1 : 0 })
     });
     cargarArchivos(currentPath);
@@ -130,7 +146,7 @@ async function crearCarpeta() {
 
 async function borrar(id) {
     if(confirm('¿Borrar definitivamente?')) {
-        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
+        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE', headers: getHeaders() });
         cargarArchivos(currentPath);
     }
 }
@@ -139,12 +155,11 @@ async function renombrar(id, actual) {
     const nuevo = prompt("Nuevo nombre:", actual);
     if (nuevo) {
         await fetch(`${URL_API}/rename/${id}`, { 
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            method: 'PATCH', headers: getHeaders(),
             body: JSON.stringify({ nuevoNombre: nuevo }) 
         });
         cargarArchivos(currentPath);
     }
 }
 
-// Inicializar la app
 init();
