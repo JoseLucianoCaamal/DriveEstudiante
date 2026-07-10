@@ -1,5 +1,12 @@
 const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
+const MI_TOKEN = "AKKO_BOSS_2026";
 let currentPath = '/';
+
+// Permisos y Navegación
+async function fetchConToken(url, options = {}) {
+    options.headers = { ...options.headers, 'x-admin-token': MI_TOKEN };
+    return await fetch(url, options);
+}
 
 window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
@@ -13,7 +20,7 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
     lista.innerHTML = '<li>Cargando...</li>';
     
     try {
-        const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetchConToken(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`);
         const archivos = await res.json();
         lista.innerHTML = '';
         
@@ -25,22 +32,17 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
             const li = document.createElement('li');
             const icon = a.esCarpeta ? '📁' : '📄';
             const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
+            const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
             
             const nombreElement = a.esCarpeta 
                 ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600;">${a.nombre}</span>`
                 : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none;"><div class="file-name">${a.nombre}</div></a>`;
 
-            // Construcción correcta de la URL para ZIP
-            const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
-
             li.innerHTML = `
                 <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
                 <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
                 <div style="display: flex; gap: 8px;">
-                    ${a.esCarpeta ? 
-                        `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : 
-                        `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`
-                    }
+                    ${a.esCarpeta ? `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`}
                     <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
                     <button class="btn-icon" onclick="borrar(${a.id})">🗑️</button>
                 </div>
@@ -50,7 +52,6 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
-// ... Las funciones subirArchivo, crearCarpeta, borrar y renombrar se mantienen iguales.
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
     const statusDiv = document.getElementById('status');
@@ -60,25 +61,14 @@ async function subirArchivo() {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
-        await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
+        await fetchConToken(`${URL_API}/upload`, { method: 'POST', body: formData });
     }
-    fileInput.value = ''; fileInput.type = 'text'; fileInput.type = 'file'; 
-    statusDiv.innerText = ''; cargarArchivos(currentPath);
-}
-
-async function crearCarpeta() {
-    const nombre = prompt("Nombre de la carpeta:");
-    if (!nombre) return;
-    await fetch(`${URL_API}/create-folder`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ nombre, rutaPadre: currentPath })
-    });
-    cargarArchivos(currentPath);
+    fileInput.value = ''; statusDiv.innerText = ''; cargarArchivos(currentPath);
 }
 
 async function borrar(id) {
     if(confirm('¿Borrar?')) {
-        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
+        await fetchConToken(`${URL_API}/delete/${id}`, { method: 'DELETE' });
         cargarArchivos(currentPath);
     }
 }
@@ -86,12 +76,22 @@ async function borrar(id) {
 async function renombrar(id, actual) {
     const nuevo = prompt("Nuevo nombre:", actual);
     if (nuevo) {
-        await fetch(`${URL_API}/rename/${id}`, { 
+        await fetchConToken(`${URL_API}/rename/${id}`, { 
             method: 'PATCH', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ nuevoNombre: nuevo }) 
         });
         cargarArchivos(currentPath);
     }
+}
+
+async function crearCarpeta() {
+    const nombre = prompt("Nombre de la carpeta:");
+    if (!nombre) return;
+    await fetchConToken(`${URL_API}/create-folder`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ nombre, rutaPadre: currentPath })
+    });
+    cargarArchivos(currentPath);
 }
 
 cargarArchivos('/');
