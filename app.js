@@ -17,17 +17,10 @@ window.onpopstate = function(event) {
 // Función para mostrar/ocultar botones dependiendo del Login
 function actualizarUI() {
     const btn = document.getElementById('loginBtn');
-    const privacyControl = document.getElementById('privacyControl');
-    
     if (isLoggedIn()) {
         if (btn) btn.innerText = "Cerrar Sesión";
-        if (privacyControl) privacyControl.style.display = "flex";
     } else {
         if (btn) btn.innerText = "Login AKKO";
-        if (privacyControl) privacyControl.style.display = "none";
-        
-        const toggle = document.getElementById('privacyToggle');
-        if(toggle) toggle.checked = false;
     }
 }
 
@@ -76,32 +69,43 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
         lista.innerHTML = '';
 
         if (ruta !== '/') {
-            lista.innerHTML += `<li onclick="cargarArchivos('/')" style="cursor:pointer; color:#6366f1;">⬅️ Volver a la raíz</li>`;
+            lista.innerHTML += `<li onclick="cargarArchivos('/')" style="cursor:pointer; color:#6366f1; padding: 5px 0;">⬅️ Volver a la raíz</li>`;
         }
 
         archivos.forEach(a => {
             const li = document.createElement('li');
+            
+            // Flexbox para adaptarse a pantallas móviles
+            li.style.display = 'flex';
+            li.style.flexWrap = 'wrap';
+            li.style.alignItems = 'center';
+            li.style.justifyContent = 'space-between';
+            li.style.gap = '10px';
+            
             const icon = a.esCarpeta ? '📁' : '📄';
             
             const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
             const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
 
             const nombreElement = a.esCarpeta 
-                ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600;">${a.nombre}</span>`
-                : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none;"><div class="file-name">${a.nombre}</div></a>`;
+                ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600; word-break: break-word;">${a.nombre}</span>`
+                : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none; word-break: break-word;"><div class="file-name">${a.nombre}</div></a>`;
 
-            // Mini Switch de privacidad por archivo
+            // Mini Switch individual con márgenes corregidos
             const btnPrivacidad = isLoggedIn() ? `
-                <label class="switch" style="transform: scale(0.6); margin-right: 5px; margin-bottom: 0;" title="${a.esPrivada ? 'Hacer Público' : 'Hacer Privado'}">
+                <label class="switch" style="transform: scale(0.65); margin: 0 -8px;" title="${a.esPrivada ? 'Hacer Público' : 'Hacer Privado'}">
                     <input type="checkbox" ${a.esPrivada ? 'checked' : ''} onchange="cambiarPrivacidad(${a.id}, ${a.esPrivada})">
                     <span class="slider round"></span>
                 </label>
             ` : '';
 
             li.innerHTML = `
-                <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
-                <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; align-items: center; flex: 1; min-width: 120px;">
+                    <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
+                    <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
+                </div>
+                
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
                     ${btnPrivacidad}
                     ${a.esCarpeta ? `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`}
                     ${isLoggedIn() ? `
@@ -121,14 +125,11 @@ async function subirArchivo() {
     if (fileInput.files.length === 0) return alert('Selecciona archivos.');
     if (statusDiv) statusDiv.innerText = 'Subiendo...';
     
-    const toggle = document.getElementById('privacyToggle');
-    const esPrivada = (isLoggedIn() && toggle && toggle.checked);
-    
     for (let i = 0; i < fileInput.files.length; i++) {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
-        formData.append('esPrivada', esPrivada ? '1' : '0'); 
+        formData.append('esPrivada', '0'); // Entra público por defecto
         
         await fetch(`${URL_API}/upload`, { 
             method: 'POST', 
@@ -146,13 +147,10 @@ async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
     
-    const toggle = document.getElementById('privacyToggle');
-    const esPrivada = (isLoggedIn() && toggle && toggle.checked);
-    
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ nombre, rutaPadre: currentPath, esPrivada: esPrivada ? 1 : 0 })
+        body: JSON.stringify({ nombre, rutaPadre: currentPath, esPrivada: 0 }) // Entra público por defecto
     });
     cargarArchivos(currentPath);
 }
@@ -175,7 +173,6 @@ async function renombrar(id, actual) {
     }
 }
 
-// Nueva función para el switch individual
 async function cambiarPrivacidad(id, estadoActual) {
     const nuevoEstado = estadoActual ? 0 : 1; 
     
