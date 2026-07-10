@@ -25,7 +25,7 @@ async function toggleLogin() {
     if (isLoggedIn) {
         await fetch(`${URL_API}/logout`, { method: 'POST' });
         isLoggedIn = false;
-        btn.innerText = "Login AKKO";
+        btn.innerText = "Login";
         alert("Sesión cerrada");
     } else {
         const username = prompt("Usuario:");
@@ -41,7 +41,7 @@ async function toggleLogin() {
         if (data.success) {
             isLoggedIn = true;
             btn.innerText = "Cerrar Sesión";
-            alert("Bienvenido AKKO");
+            alert("Bienvenido");
         } else { alert("Acceso denegado"); }
     }
     cargarArchivos(currentPath);
