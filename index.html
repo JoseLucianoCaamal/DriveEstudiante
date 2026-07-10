@@ -69,6 +69,13 @@
         <button onclick="document.getElementById('alertModal').style.display='none'" class="btn-modal btn-aceptar" style="width: 100%;">Entendido</button>
     </div></div>
 
+    <div id="previewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#1e293b; padding:20px; border-radius:10px; max-width:90%; max-height:90%; position:relative;">
+        <button onclick="document.getElementById('previewModal').style.display='none'" style="position:absolute; top:10px; right:10px; cursor:pointer;">❌</button>
+        <div id="previewContent" style="overflow:auto; max-height:80vh;"></div>
+    </div>
+</div>
+
     <script src="app.js"></script>
 </body>
 </html>

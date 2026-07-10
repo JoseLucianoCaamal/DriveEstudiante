@@ -14,11 +14,32 @@ function getHeaders(esUpload = false) {
     return headers;
 }
 
+// --- PREVISUALIZACIÓN DE ARCHIVOS ---
+function previsualizar(nombre) {
+    const modal = document.getElementById('previewModal');
+    const container = document.getElementById('previewContent');
+    const url = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(nombre)}`;
+    
+    container.innerHTML = ''; 
+    if (nombre.match(/\.(jpeg|jpg|png|gif)$/i)) {
+        container.innerHTML = `<img src="${url}" style="max-width:100%; height:auto; border-radius:5px;">`;
+    } else if (nombre.toLowerCase().endsWith('.pdf')) {
+        container.innerHTML = `<iframe src="${url}" width="100%" height="500px" style="border:none;"></iframe>`;
+    } else {
+        mostrarAlerta("La previsualización no está disponible para este tipo de archivo.");
+        return;
+    }
+    modal.style.display = 'flex';
+}
+
 window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
 };
 
-function mostrarAlerta(m) { document.getElementById('alertMessage').innerText = m; document.getElementById('alertModal').style.display = 'flex'; }
+function mostrarAlerta(m) { 
+    document.getElementById('alertMessage').innerText = m; 
+    document.getElementById('alertModal').style.display = 'flex'; 
+}
 
 function actualizarUI() {
     const btn = document.getElementById('loginBtn');
@@ -49,7 +70,8 @@ async function crearUsuario() {
     const username = document.getElementById('newUsername').value;
     const password = document.getElementById('newPassword').value;
     await fetch(`${URL_API}/usuarios/crear`, {
-        method: 'POST', headers: getHeaders(),
+        method: 'POST', 
+        headers: getHeaders(),
         body: JSON.stringify({ username, password })
     });
     abrirAdmin();
@@ -68,7 +90,9 @@ function toggleLogin() {
         actualizarUI();
         mostrarAlerta("Sesión cerrada");
         cargarArchivos('/');
-    } else { document.getElementById('loginModal').style.display = 'flex'; }
+    } else { 
+        document.getElementById('loginModal').style.display = 'flex'; 
+    }
 }
 
 function cerrarModalLogin() { document.getElementById('loginModal').style.display = 'none'; }
@@ -89,7 +113,9 @@ async function procesarLogin() {
         cerrarModalLogin();
         actualizarUI();
         cargarArchivos('/');
-    } else { mostrarAlerta("Acceso denegado"); }
+    } else { 
+        mostrarAlerta("Acceso denegado"); 
+    }
 }
 
 // --- ARCHIVOS Y CARPETAS ---
@@ -102,14 +128,19 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
         const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`, { headers: getHeaders() });
         const archivos = await res.json();
         lista.innerHTML = '';
+        
         if (ruta !== '/') {
             lista.innerHTML += `<li onclick="cargarArchivos('/')" style="cursor:pointer; color:#6366f1; padding: 5px 0;">⬅️ Volver a la raíz</li>`;
         }
+        
         archivos.forEach(a => {
             const li = document.createElement('li');
             li.style.display = 'flex'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between';
             const icon = a.esCarpeta ? '📁' : '📄';
             const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
+            
+            // Si es carpeta navega la ruta, si es archivo abre la previsualización interactiva
+            const clickAction = a.esCarpeta ? `cargarArchivos('${a.nombre}')` : `previsualizar('${a.nombre}')`;
             
             const btnPrivacidad = isLoggedIn() ? `
                 <label class="switch" style="transform: scale(0.65); margin: 0 -8px;" title="${a.esPrivada ? 'Hacer Público' : 'Hacer Privado'}">
@@ -118,9 +149,9 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
                 </label>` : '';
 
             li.innerHTML = `
-                <div style="display: flex; align-items: center; flex: 1;">
+                <div style="display: flex; align-items: center; flex: 1; cursor:pointer;" onclick="${clickAction}">
                     <span style="font-size: 20px; margin-right: 10px;">${icon}</span>
-                    <span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer;">${a.nombre}</span>
+                    <span>${a.nombre}</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 5px;">
                     ${btnPrivacidad}
@@ -130,7 +161,9 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
                 </div>`;
             lista.appendChild(li);
         });
-    } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
+    } catch (e) { 
+        lista.innerHTML = '<li>Error de conexión</li>'; 
+    }
 }
 
 async function crearCarpeta() {
@@ -171,7 +204,11 @@ async function borrar(id) {
 async function renombrar(id, actual) {
     const nuevo = prompt("Nuevo nombre:", actual);
     if (nuevo) {
-        await fetch(`${URL_API}/rename/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ nuevoNombre: nuevo }) });
+        await fetch(`${URL_API}/rename/${id}`, { 
+            method: 'PATCH', 
+            headers: getHeaders(), 
+            body: JSON.stringify({ nuevoNombre: nuevo }) 
+        });
         cargarArchivos(currentPath);
     }
 }
