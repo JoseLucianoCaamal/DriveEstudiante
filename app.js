@@ -21,14 +21,11 @@ function actualizarUI() {
     
     if (isLoggedIn()) {
         if (btn) btn.innerText = "Cerrar Sesión";
-        // Mostramos el switch de privacidad
         if (privacyControl) privacyControl.style.display = "flex";
     } else {
         if (btn) btn.innerText = "Login AKKO";
-        // Ocultamos el switch de privacidad
         if (privacyControl) privacyControl.style.display = "none";
         
-        // Reseteamos el switch a "Público" por seguridad al cerrar sesión
         const toggle = document.getElementById('privacyToggle');
         if(toggle) toggle.checked = false;
     }
@@ -93,10 +90,19 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
                 ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600;">${a.nombre}</span>`
                 : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none;"><div class="file-name">${a.nombre}</div></a>`;
 
+            // Mini Switch de privacidad por archivo
+            const btnPrivacidad = isLoggedIn() ? `
+                <label class="switch" style="transform: scale(0.6); margin-right: 5px; margin-bottom: 0;" title="${a.esPrivada ? 'Hacer Público' : 'Hacer Privado'}">
+                    <input type="checkbox" ${a.esPrivada ? 'checked' : ''} onchange="cambiarPrivacidad(${a.id}, ${a.esPrivada})">
+                    <span class="slider round"></span>
+                </label>
+            ` : '';
+
             li.innerHTML = `
                 <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
                 <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
-                <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    ${btnPrivacidad}
                     ${a.esCarpeta ? `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`}
                     ${isLoggedIn() ? `
                         <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
@@ -115,7 +121,6 @@ async function subirArchivo() {
     if (fileInput.files.length === 0) return alert('Selecciona archivos.');
     if (statusDiv) statusDiv.innerText = 'Subiendo...';
     
-    // Leemos silenciosamente la posición del Switch
     const toggle = document.getElementById('privacyToggle');
     const esPrivada = (isLoggedIn() && toggle && toggle.checked);
     
@@ -141,7 +146,6 @@ async function crearCarpeta() {
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
     
-    // Leemos silenciosamente la posición del Switch
     const toggle = document.getElementById('privacyToggle');
     const esPrivada = (isLoggedIn() && toggle && toggle.checked);
     
@@ -169,6 +173,19 @@ async function renombrar(id, actual) {
         });
         cargarArchivos(currentPath);
     }
+}
+
+// Nueva función para el switch individual
+async function cambiarPrivacidad(id, estadoActual) {
+    const nuevoEstado = estadoActual ? 0 : 1; 
+    
+    await fetch(`${URL_API}/toggle-privacy/${id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ esPrivada: nuevoEstado })
+    });
+    
+    cargarArchivos(currentPath); 
 }
 
 init();
