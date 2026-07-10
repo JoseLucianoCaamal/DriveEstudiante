@@ -20,7 +20,7 @@ function actualizarUI() {
     if (isLoggedIn()) {
         if (btn) btn.innerText = "Cerrar Sesión";
     } else {
-        if (btn) btn.innerText = "Login AKKO";
+        if (btn) btn.innerText = "Login";
     }
 }
 
@@ -49,7 +49,7 @@ async function toggleLogin() {
         if (data.success) {
             localStorage.setItem('akkoToken', data.token);
             actualizarUI();
-            alert("Bienvenido AKKO");
+            alert("Bienvenido");
         } else { alert("Acceso denegado"); }
     }
     cargarArchivos(currentPath);
