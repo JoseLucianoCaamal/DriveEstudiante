@@ -1,16 +1,13 @@
 const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
 let currentPath = '/';
 
-// Manejo del botón "Atrás" del navegador/móvil
 window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
 };
 
 async function cargarArchivos(ruta = '/', pushHistory = true) {
     currentPath = ruta;
-    if (pushHistory) {
-        history.pushState({ path: ruta }, '', '');
-    }
+    if (pushHistory) history.pushState({ path: ruta }, '', '');
     
     const lista = document.getElementById('fileList');
     lista.innerHTML = '<li>Cargando...</li>';
@@ -29,17 +26,19 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
             const icon = a.esCarpeta ? '📁' : '📄';
             const urlDescarga = URL_API.replace('/api', '') + '/uploads/' + encodeURIComponent(a.nombre);
             
-            // Si es carpeta, vista de carpeta. Si es archivo, enlace a vista previa (target="_blank")
             const nombreElement = a.esCarpeta 
                 ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600;">${a.nombre}</span>`
                 : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none;"><div class="file-name">${a.nombre}</div></a>`;
+
+            // URL corregida con ?nombre=
+            const urlZip = `${URL_API.replace('/api', '')}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
 
             li.innerHTML = `
                 <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
                 <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
                 <div style="display: flex; gap: 8px;">
                     ${a.esCarpeta ? 
-                        `<a href="${URL_API.replace('/api', '')}/download-folder/${encodeURIComponent(a.nombre)}"><button class="btn-zip">⬇️ ZIP</button></a>` : 
+                        `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : 
                         `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`
                     }
                     <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
