@@ -14,6 +14,13 @@ window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
 };
 
+// --- NUEVA LÓGICA DE ALERTAS BONITAS ---
+function mostrarAlerta(mensaje) {
+    document.getElementById('alertMessage').innerText = mensaje;
+    document.getElementById('alertModal').style.display = 'flex';
+}
+// ---------------------------------------
+
 function actualizarUI() {
     const btn = document.getElementById('loginBtn');
     if (isLoggedIn()) {
@@ -28,15 +35,13 @@ async function init() {
     cargarArchivos('/', true);
 }
 
-// --- NUEVA LÓGICA DEL MODAL DE LOGIN ---
 function toggleLogin() {
     if (isLoggedIn()) {
         localStorage.removeItem('akkoToken');
         actualizarUI();
-        alert("Sesión cerrada en este dispositivo"); // Puedes cambiar esto por un modal de éxito luego si quieres
+        mostrarAlerta("Sesión cerrada en este dispositivo"); 
         cargarArchivos(currentPath);
     } else {
-        // Abrimos el modal personalizado
         document.getElementById('loginModal').style.display = 'flex';
         document.getElementById('usernameInput').value = '';
         document.getElementById('passwordInput').value = '';
@@ -54,7 +59,6 @@ async function procesarLogin() {
     
     if (!username || !password) return;
     
-    // Mostramos que está cargando
     document.getElementById('confirmLoginBtn').innerText = '...';
     
     const res = await fetch(`${URL_API}/login`, {
@@ -64,7 +68,6 @@ async function procesarLogin() {
     });
     const data = await res.json();
     
-    // Restauramos el texto del botón
     document.getElementById('confirmLoginBtn').innerText = 'Aceptar';
     
     if (data.success) {
@@ -73,10 +76,9 @@ async function procesarLogin() {
         actualizarUI();
         cargarArchivos(currentPath);
     } else { 
-        alert("Acceso denegado"); 
+        mostrarAlerta("Acceso denegado"); 
     }
 }
-// ----------------------------------------
 
 async function cargarArchivos(ruta = '/', pushHistory = true) {
     currentPath = ruta;
@@ -143,7 +145,7 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
 async function subirArchivo() {
     const fileInput = document.getElementById('fileInput');
     const statusDiv = document.getElementById('status');
-    if (fileInput.files.length === 0) return alert('Selecciona archivos.');
+    if (fileInput.files.length === 0) return mostrarAlerta('Selecciona archivos.');
     if (statusDiv) statusDiv.innerText = 'Subiendo...';
     
     for (let i = 0; i < fileInput.files.length; i++) {
@@ -165,7 +167,6 @@ async function subirArchivo() {
 }
 
 async function crearCarpeta() {
-    // Si quisieras cambiar el prompt de la carpeta también, se haría un modal parecido, por ahora lo dejamos así.
     const nombre = prompt("Nombre de la carpeta:");
     if (!nombre) return;
     
