@@ -1,4 +1,4 @@
-const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
+const URL_API = '[https://expressed-anna-brian-seattle.trycloudflare.com/api](https://expressed-anna-brian-seattle.trycloudflare.com/api)';
 let currentPath = '/';
 
 // Función para Login
