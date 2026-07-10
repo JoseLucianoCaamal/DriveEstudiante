@@ -1,13 +1,28 @@
 const URL_API = 'https://requiring-andrews-inherited-stuffed.trycloudflare.com/api';
-const MI_TOKEN = "AKKO_BOSS_2026";
 let currentPath = '/';
 
-// Permisos y Navegación
-async function fetchConToken(url, options = {}) {
-    options.headers = { ...options.headers, 'x-admin-token': MI_TOKEN };
-    return await fetch(url, options);
+// Función para Login
+async function login() {
+    const username = prompt("Usuario:");
+    const password = prompt("Contraseña:");
+    
+    try {
+        const res = await fetch(`${URL_API}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Bienvenido AKKO");
+            cargarArchivos('/'); // Recarga la vista con permisos de jefe
+        } else {
+            alert("Acceso denegado");
+        }
+    } catch (e) { alert("Error al conectar con el servidor"); }
 }
 
+// Navegación
 window.onpopstate = function(event) {
     cargarArchivos(event.state ? event.state.path : '/', false);
 };
@@ -20,7 +35,7 @@ async function cargarArchivos(ruta = '/', pushHistory = true) {
     lista.innerHTML = '<li>Cargando...</li>';
     
     try {
-        const res = await fetchConToken(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`);
+        const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`);
         const archivos = await res.json();
         lista.innerHTML = '';
         
@@ -61,14 +76,29 @@ async function subirArchivo() {
         const formData = new FormData();
         formData.append('archivoEstudiante', fileInput.files[i]);
         formData.append('rutaPadre', currentPath);
-        await fetchConToken(`${URL_API}/upload`, { method: 'POST', body: formData });
+        await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
     }
     fileInput.value = ''; statusDiv.innerText = ''; cargarArchivos(currentPath);
 }
 
+async function crearCarpeta() {
+    const nombre = prompt("Nombre de la carpeta:");
+    if (!nombre) return;
+    
+    // Nueva lógica: Preguntar si es privada
+    const esPrivada = confirm("¿Hacer esta carpeta PRIVADA (solo para AKKO)?");
+    
+    await fetch(`${URL_API}/create-folder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, rutaPadre: currentPath, esPrivada: esPrivada ? 1 : 0 })
+    });
+    cargarArchivos(currentPath);
+}
+
 async function borrar(id) {
     if(confirm('¿Borrar?')) {
-        await fetchConToken(`${URL_API}/delete/${id}`, { method: 'DELETE' });
+        await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
         cargarArchivos(currentPath);
     }
 }
@@ -76,22 +106,12 @@ async function borrar(id) {
 async function renombrar(id, actual) {
     const nuevo = prompt("Nuevo nombre:", actual);
     if (nuevo) {
-        await fetchConToken(`${URL_API}/rename/${id}`, { 
-            method: 'PATCH', headers: {'Content-Type': 'application/json'},
+        await fetch(`${URL_API}/rename/${id}`, { 
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nuevoNombre: nuevo }) 
         });
         cargarArchivos(currentPath);
     }
-}
-
-async function crearCarpeta() {
-    const nombre = prompt("Nombre de la carpeta:");
-    if (!nombre) return;
-    await fetchConToken(`${URL_API}/create-folder`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ nombre, rutaPadre: currentPath })
-    });
-    cargarArchivos(currentPath);
 }
 
 cargarArchivos('/');
