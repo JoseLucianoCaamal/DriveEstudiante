@@ -1,12 +1,32 @@
 const URL_API = 'https://expressed-anna-brian-seattle.trycloudflare.com/api';
 let currentPath = '/';
+let isLoggedIn = false;
 
-// Función para Login
-async function login() {
-    const username = prompt("Usuario:");
-    const password = prompt("Contraseña:");
-    
+// Al cargar la app, verificamos si ya había sesión abierta
+async function init() {
     try {
+        const res = await fetch(`${URL_API}/check-session`);
+        const data = await res.json();
+        isLoggedIn = data.loggedIn;
+        const btn = document.getElementById('loginBtn');
+        if (btn) btn.innerText = isLoggedIn ? "Cerrar Sesión" : "Login AKKO";
+    } catch (e) { console.log("Servidor offline"); }
+    cargarArchivos('/');
+}
+
+// Alternar entre Login y Logout
+async function toggleLogin() {
+    const btn = document.getElementById('loginBtn');
+    if (isLoggedIn) {
+        await fetch(`${URL_API}/logout`, { method: 'POST' });
+        isLoggedIn = false;
+        btn.innerText = "Login AKKO";
+        alert("Sesión cerrada");
+    } else {
+        const username = prompt("Usuario:");
+        const password = prompt("Contraseña:");
+        if (!username || !password) return;
+        
         const res = await fetch(`${URL_API}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -14,78 +34,39 @@ async function login() {
         });
         const data = await res.json();
         if (data.success) {
+            isLoggedIn = true;
+            btn.innerText = "Cerrar Sesión";
             alert("Bienvenido AKKO");
-            cargarArchivos('/'); // Recarga la vista con acceso total
-        } else {
-            alert("Acceso denegado");
-        }
-    } catch (e) { alert("Error al conectar con el servidor"); }
+        } else { alert("Acceso denegado"); }
+    }
+    cargarArchivos(currentPath);
 }
 
-// Navegación
-window.onpopstate = function(event) {
-    cargarArchivos(event.state ? event.state.path : '/', false);
-};
-
-async function cargarArchivos(ruta = '/', pushHistory = true) {
+// Cargar archivos
+async function cargarArchivos(ruta = '/') {
     currentPath = ruta;
-    if (pushHistory) history.pushState({ path: ruta }, '', '');
-    
     const lista = document.getElementById('fileList');
     lista.innerHTML = '<li>Cargando...</li>';
-    
     try {
         const res = await fetch(`${URL_API}/files?ruta=${encodeURIComponent(ruta)}&t=${Date.now()}`);
         const archivos = await res.json();
         lista.innerHTML = '';
-        
-        if (ruta !== '/') {
-            lista.innerHTML += `<li onclick="cargarArchivos('/')" style="cursor:pointer; color:#6366f1;">⬅️ Volver a la raíz</li>`;
-        }
-
         archivos.forEach(a => {
             const li = document.createElement('li');
-            const icon = a.esCarpeta ? '📁' : '📄';
-            // Construcción correcta de URLs
-            const urlDescarga = `${URL_API.replace('/api', '')}/uploads/${encodeURIComponent(a.nombre)}`;
-            const urlZip = `${URL_API}/download-folder?nombre=${encodeURIComponent(a.nombre)}`;
-            
-            const nombreElement = a.esCarpeta 
-                ? `<span onclick="cargarArchivos('${a.nombre}')" style="cursor:pointer; font-weight: 600;">${a.nombre}</span>`
-                : `<a href="${urlDescarga}" target="_blank" style="color:white; text-decoration:none;"><div class="file-name">${a.nombre}</div></a>`;
-
             li.innerHTML = `
-                <span style="font-size: 20px; margin-right: 15px;">${icon}</span>
-                <div style="flex-grow: 1; overflow: hidden;">${nombreElement}</div>
-                <div style="display: flex; gap: 8px;">
-                    ${a.esCarpeta ? `<a href="${urlZip}"><button class="btn-zip">⬇️ ZIP</button></a>` : `<a href="${urlDescarga}" download><button class="btn-icon">⬇️</button></a>`}
-                    <button class="btn-icon" onclick="renombrar(${a.id}, '${a.nombre.replace(/'/g, "\\'")}')">✏️</button>
-                    <button class="btn-icon" onclick="borrar(${a.id})">🗑️</button>
-                </div>
+                <span>${a.esCarpeta ? '📁' : '📄'}</span>
+                <span onclick="${a.esCarpeta ? `cargarArchivos('${a.nombre}')` : ''}">${a.nombre}</span>
+                ${isLoggedIn ? `<button onclick="borrar(${a.id})">🗑️</button>` : ''}
             `;
             lista.appendChild(li);
         });
     } catch (e) { lista.innerHTML = '<li>Error de conexión</li>'; }
 }
 
-async function subirArchivo() {
-    const fileInput = document.getElementById('fileInput');
-    const statusDiv = document.getElementById('status');
-    if (fileInput.files.length === 0) return alert('Selecciona archivos.');
-    statusDiv.innerText = 'Subiendo...';
-    for (let i = 0; i < fileInput.files.length; i++) {
-        const formData = new FormData();
-        formData.append('archivoEstudiante', fileInput.files[i]);
-        formData.append('rutaPadre', currentPath);
-        await fetch(`${URL_API}/upload`, { method: 'POST', body: formData });
-    }
-    fileInput.value = ''; statusDiv.innerText = ''; cargarArchivos(currentPath);
-}
-
 async function crearCarpeta() {
-    const nombre = prompt("Nombre de la carpeta:");
+    const nombre = prompt("Nombre:");
     if (!nombre) return;
-    const esPrivada = confirm("¿Hacer esta carpeta PRIVADA (solo para AKKO)?");
+    const esPrivada = confirm("¿Hacer PRIVADA (solo para AKKO)?");
     await fetch(`${URL_API}/create-folder`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,21 +76,11 @@ async function crearCarpeta() {
 }
 
 async function borrar(id) {
-    if(confirm('¿Borrar?')) {
+    if(confirm('¿Borrar este archivo/carpeta?')) {
         await fetch(`${URL_API}/delete/${id}`, { method: 'DELETE' });
         cargarArchivos(currentPath);
     }
 }
 
-async function renombrar(id, actual) {
-    const nuevo = prompt("Nuevo nombre:", actual);
-    if (nuevo) {
-        await fetch(`${URL_API}/rename/${id}`, { 
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nuevoNombre: nuevo }) 
-        });
-        cargarArchivos(currentPath);
-    }
-}
-
-cargarArchivos('/');
+// Iniciar aplicación
+init();
